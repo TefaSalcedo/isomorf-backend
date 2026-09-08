@@ -1,0 +1,46 @@
+from datetime import datetime
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.schemas.element import ProjectElementPublic
+
+
+class ProjectCreate(BaseModel):
+    name: str = Field(min_length=1, max_length=200)
+    description: str = Field(default='', max_length=5000)
+
+
+class MaterialConstants(BaseModel):
+    compressive_strength: float | None = Field(default=None, ge=0)
+    density: float | None = Field(default=None, ge=0)
+    elastic_modulus: float | None = Field(default=None, ge=0)
+
+
+class DesignSettings(BaseModel):
+    seismic_zone: str | None = Field(default=None, max_length=100)
+    hail_zone: str | None = Field(default=None, max_length=100)
+    wind_zone: str | None = Field(default=None, max_length=100)
+    building_code: str | None = Field(default=None, max_length=200)
+    material: MaterialConstants | None = Field(default_factory=MaterialConstants)
+
+
+class ProjectUpdate(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=200)
+    description: str | None = Field(default=None, max_length=5000)
+    design_settings: DesignSettings | None = None
+
+
+class ProjectPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: str
+    description: str
+    design_settings: dict
+    created_at: datetime
+    updated_at: datetime
+
+
+class ProjectDetail(ProjectPublic):
+    elements: list[ProjectElementPublic] = []
