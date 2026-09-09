@@ -25,7 +25,7 @@ def list_all(user: User = Depends(get_current_user), db: Session = Depends(get_d
 
 
 @router.get('/{project_id}', response_model=ProjectDetail)
-def get(project_id: UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+def get(project_id: str, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return get_project(db, user, project_id)
 
 

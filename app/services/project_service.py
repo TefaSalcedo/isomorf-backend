@@ -14,8 +14,16 @@ def list_projects(db: Session, user: User) -> list[Project]:
     return list(db.scalars(select(Project).where(Project.user_id == user.id).order_by(Project.updated_at.desc())).all())
 
 
-def get_project(db: Session, user: User, project_id: UUID) -> Project:
-    project = db.scalar(select(Project).options(selectinload(Project.elements)).where(Project.id == project_id, Project.user_id == user.id))
+def get_project(db: Session, user: User, project_id: str | UUID) -> Project:
+    identifier = str(project_id)
+    project = db.scalar(select(Project).options(selectinload(Project.elements)).where(Project.public_id == identifier, Project.user_id == user.id))
+    if not project:
+        try:
+            internal_id = UUID(identifier)
+        except ValueError:
+            internal_id = None
+        if internal_id:
+            project = db.scalar(select(Project).options(selectinload(Project.elements)).where(Project.id == internal_id, Project.user_id == user.id))
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Project not found')
     return project

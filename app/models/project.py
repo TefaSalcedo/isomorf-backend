@@ -8,10 +8,15 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
 
 
+def generate_public_id() -> str:
+    return uuid4().hex[:12]
+
+
 class Project(Base):
     __tablename__ = 'projects'
 
     id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), primary_key=True, default=uuid4)
+    public_id: Mapped[str] = mapped_column(String(12), unique=True, index=True, default=generate_public_id, nullable=False)
     user_id: Mapped[UUID] = mapped_column(PGUUID(as_uuid=True), ForeignKey('users.id', ondelete='CASCADE'), index=True, nullable=False)
     folder_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey('folders.id', ondelete='SET NULL'), index=True)
     name: Mapped[str] = mapped_column(String(200), nullable=False)
