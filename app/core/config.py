@@ -1,11 +1,15 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file='.env', extra='ignore')
+    model_config = SettingsConfigDict(
+        env_file=(Path(__file__).resolve().parents[3] / '.env', '.env'),
+        extra='ignore',
+    )
 
     database_url: str = Field(alias='DATABASE_URL')
     jwt_secret_key: str = Field(alias='JWT_SECRET_KEY')

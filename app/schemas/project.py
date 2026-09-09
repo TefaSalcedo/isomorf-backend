@@ -9,6 +9,7 @@ from app.schemas.element import ProjectElementPublic
 class ProjectCreate(BaseModel):
     name: str = Field(min_length=1, max_length=200)
     description: str = Field(default='', max_length=5000)
+    folder_id: UUID | None = None
 
 
 class MaterialConstants(BaseModel):
@@ -18,6 +19,7 @@ class MaterialConstants(BaseModel):
 
 
 class DesignSettings(BaseModel):
+    unit: str | None = Field(default=None, max_length=10)
     seismic_zone: str | None = Field(default=None, max_length=100)
     hail_zone: str | None = Field(default=None, max_length=100)
     wind_zone: str | None = Field(default=None, max_length=100)
@@ -28,6 +30,7 @@ class DesignSettings(BaseModel):
 class ProjectUpdate(BaseModel):
     name: str | None = Field(default=None, min_length=1, max_length=200)
     description: str | None = Field(default=None, max_length=5000)
+    folder_id: UUID | None = None
     design_settings: DesignSettings | None = None
 
 
@@ -35,6 +38,7 @@ class ProjectPublic(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID
+    folder_id: UUID | None
     name: str
     description: str
     design_settings: dict
