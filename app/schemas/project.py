@@ -18,6 +18,14 @@ class MaterialConstants(BaseModel):
     elastic_modulus: float | None = Field(default=None, ge=0)
 
 
+class PlanLayer(BaseModel):
+    id: str = Field(min_length=1, max_length=64)
+    name: str = Field(min_length=1, max_length=80)
+    color: str = Field(pattern=r'^#[0-9a-fA-F]{6}$')
+    visible: bool = True
+    locked: bool = False
+
+
 class DesignSettings(BaseModel):
     unit: str | None = Field(default=None, max_length=10)
     seismic_zone: str | None = Field(default=None, max_length=100)
@@ -25,6 +33,7 @@ class DesignSettings(BaseModel):
     wind_zone: str | None = Field(default=None, max_length=100)
     building_code: str | None = Field(default=None, max_length=200)
     material: MaterialConstants | None = Field(default_factory=MaterialConstants)
+    layers: list[PlanLayer] | None = Field(default=None, max_length=50)
 
 
 class ProjectUpdate(BaseModel):
