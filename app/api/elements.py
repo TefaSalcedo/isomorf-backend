@@ -4,10 +4,10 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.dependencies.auth import get_current_user
 from app.dependencies.device import require_device_proof
 from app.models.device_session import DeviceSession
 from app.models.user import User
-from app.dependencies.auth import get_current_user
 from app.schemas.element import ElementPayload, ElementUpdate, ProjectElementPublic
 from app.services.element_service import create_element, delete_element, list_elements, update_element
 
