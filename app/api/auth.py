@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
-from fastapi import APIRouter, Cookie, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -20,6 +20,12 @@ router = APIRouter(prefix='/api/auth', tags=['auth'])
 
 def set_session_cookie(response: Response, token: str) -> None:
     response.set_cookie(settings.cookie_name, token, httponly=True, secure=settings.cookie_secure, samesite=settings.cookie_samesite, max_age=settings.access_token_expire_minutes * 60, path='/')
+    response.set_cookie(settings.auth_hint_cookie_name, '1', httponly=False, secure=settings.cookie_secure, samesite=settings.cookie_samesite, max_age=settings.access_token_expire_minutes * 60, path='/')
+
+
+def clear_session_cookies(response: Response) -> None:
+    response.delete_cookie(settings.cookie_name, path='/')
+    response.delete_cookie(settings.auth_hint_cookie_name, path='/')
 
 
 def issue_session(response: Response, session: DeviceSession) -> AuthResponse:
@@ -48,7 +54,7 @@ def logout(response: Response, session: DeviceSession = Depends(get_current_sess
     session.revoked_at = datetime.now(timezone.utc)
     session.revocation_reason = 'logout'
     db.commit()
-    response.delete_cookie(settings.cookie_name, path='/')
+    clear_session_cookies(response)
 
 
 @router.get('/me', response_model=UserPublic)
