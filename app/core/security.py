@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from hashlib import sha256
+from typing import Any
 from uuid import UUID
 
 import bcrypt
@@ -34,14 +35,15 @@ def create_access_token(user_id: UUID, session_id: UUID) -> tuple[str, datetime]
     return jwt.encode(payload, settings.jwt_secret_key, algorithm=settings.jwt_algorithm), expires_at
 
 
-def decode_access_token(token: str) -> dict:
-    return jwt.decode(
+def decode_access_token(token: str) -> dict[str, Any]:
+    payload: dict[str, Any] = jwt.decode(
         token,
         settings.jwt_secret_key,
         algorithms=[settings.jwt_algorithm],
         issuer='isomorf-api',
         audience='isomorf-web',
     )
+    return payload
 
 
 def get_token_subject(token: str) -> tuple[UUID, UUID]:

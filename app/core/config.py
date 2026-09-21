@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -18,7 +19,7 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int = Field(default=30, alias='REFRESH_TOKEN_EXPIRE_DAYS')
     frontend_url: str = Field(default='http://localhost:3000', alias='FRONTEND_URL')
     cookie_secure: bool = Field(default=False, alias='COOKIE_SECURE')
-    cookie_samesite: str = Field(default='lax', alias='COOKIE_SAMESITE')
+    cookie_samesite: Literal['lax', 'strict', 'none'] = Field(default='lax', alias='COOKIE_SAMESITE')
     cookie_name: str = Field(default='isomorf_session', alias='COOKIE_NAME')
     refresh_cookie_name: str = Field(default='isomorf_refresh', alias='REFRESH_COOKIE_NAME')
     auth_hint_cookie_name: str = Field(default='isomorf_auth_hint', alias='AUTH_HINT_COOKIE_NAME')
@@ -27,7 +28,7 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
-    return Settings()
+    return Settings()  # type: ignore[call-arg]
 
 
 settings = get_settings()
