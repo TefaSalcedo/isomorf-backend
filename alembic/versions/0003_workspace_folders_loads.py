@@ -5,9 +5,10 @@ Revises: 0002_editor_structural_support
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+
+from alembic import op
 
 revision: str = '0003_workspace_folders_loads'
 down_revision: Union[str, Sequence[str], None] = '0002_editor_structural_support'

@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     cookie_samesite: str = Field(default='lax', alias='COOKIE_SAMESITE')
     cookie_name: str = Field(default='isomorf_session', alias='COOKIE_NAME')
     refresh_cookie_name: str = Field(default='isomorf_refresh', alias='REFRESH_COOKIE_NAME')
+    auth_hint_cookie_name: str = Field(default='isomorf_auth_hint', alias='AUTH_HINT_COOKIE_NAME')
     device_proof_max_age_seconds: int = Field(default=90, alias='DEVICE_PROOF_MAX_AGE_SECONDS')
 
 

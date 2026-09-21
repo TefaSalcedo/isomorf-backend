@@ -5,8 +5,9 @@ Revises: 0003_workspace_folders_loads
 """
 from typing import Sequence, Union
 
-from alembic import op
 import sqlalchemy as sa
+
+from alembic import op
 
 revision: str = '0004_project_public_id'
 down_revision: Union[str, Sequence[str], None] = '0003_workspace_folders_loads'

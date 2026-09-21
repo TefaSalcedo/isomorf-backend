@@ -34,6 +34,28 @@ documentation is served at `http://localhost:8000/docs`.
 | `ACCESS_TOKEN_EXPIRE_MINUTES` | `15` | Access token lifetime |
 | `REFRESH_TOKEN_EXPIRE_DAYS` | `30` | Refresh token lifetime |
 | `COOKIE_SECURE` | `false` | Set to `true` behind HTTPS |
+| `AUTH_HINT_COOKIE_NAME` | `isomorf_auth_hint` | Non-HttpOnly marker cookie the frontend reads before calling `/api/auth/me` |
+
+## Testing
+
+Tests run against a dedicated PostgreSQL database (`isomorf_test` by default,
+created and migrated automatically). Override the location with
+`TEST_DATABASE_URL`.
+
+```bash
+docker run -d --name isomorf-pg -p 5432:5432 \
+  -e POSTGRES_USER=isomorf -e POSTGRES_PASSWORD=isomorf -e POSTGRES_DB=isomorf postgres:16
+
+.venv/bin/pip install -r requirements-dev.txt
+.venv/bin/pytest --cov=app/services --cov-report=term-missing
+```
+
+Lint and typecheck:
+
+```bash
+.venv/bin/ruff check .
+.venv/bin/mypy app
+```
 
 ## Docker
 
