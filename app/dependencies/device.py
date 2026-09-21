@@ -47,7 +47,7 @@ def require_device_proof(
     nonce: str | None = Header(default=None, alias='X-Device-Nonce'),
     signature: str | None = Header(default=None, alias='X-Device-Signature'),
 ) -> DeviceSession:
-    if not all((key_id, timestamp, nonce, signature)) or key_id != session.key_id:
+    if key_id is None or timestamp is None or nonce is None or signature is None or key_id != session.key_id:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Device proof required')
     try:
         timestamp_value = int(timestamp)

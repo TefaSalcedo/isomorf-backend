@@ -8,6 +8,7 @@ from app.models.folder import Folder
 from app.models.project import Project
 from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectUpdate
+from app.services.document_service import _head_revision, ensure_baseline
 
 
 def list_projects(db: Session, user: User) -> list[Project]:
@@ -26,6 +27,7 @@ def get_project(db: Session, user: User, project_id: str | UUID) -> Project:
             project = db.scalar(select(Project).options(selectinload(Project.elements)).where(Project.id == internal_id, Project.user_id == user.id))
     if not project:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Project not found')
+    project.head_revision = _head_revision(db, project.id)
     return project
 
 
@@ -40,6 +42,8 @@ def create_project(db: Session, user: User, payload: ProjectCreate) -> Project:
     db.add(project)
     db.commit()
     db.refresh(project)
+    ensure_baseline(db, project)
+    db.commit()
     return project
 
 

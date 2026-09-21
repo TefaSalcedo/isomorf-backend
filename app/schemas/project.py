@@ -58,3 +58,5 @@ class ProjectPublic(BaseModel):
 
 class ProjectDetail(ProjectPublic):
     elements: list[ProjectElementPublic] = []
+    current_revision: int = 0
+    head_revision: int = 0

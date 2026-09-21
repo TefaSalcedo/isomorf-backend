@@ -9,6 +9,7 @@ from app.models.project_element import ProjectElement
 from app.models.structural_load import ElementLoad, LoadCase
 from app.models.user import User
 from app.schemas.structural_load import ElementLoadCreate, ElementLoadUpdate, LoadCaseCreate
+from app.services.document_service import refresh_current_snapshot_links
 
 
 def get_project(db: Session, user: User, project_id: UUID) -> Project:
@@ -55,6 +56,8 @@ def create_load(db: Session, user: User, project_id: UUID, payload: ElementLoadC
     validate_element(db, load_case.project_id, payload.element_id)
     load = ElementLoad(**payload.model_dump())
     db.add(load)
+    db.flush()
+    refresh_current_snapshot_links(db, project_id)
     db.commit()
     db.refresh(load)
     return load
@@ -69,6 +72,8 @@ def update_load(db: Session, user: User, project_id: UUID, load_id: UUID, payloa
     validate_element(db, project_id, values.get('element_id', load.element_id))
     for key, value in values.items():
         setattr(load, key, value)
+    db.flush()
+    refresh_current_snapshot_links(db, project_id)
     db.commit()
     db.refresh(load)
     return load
@@ -80,4 +85,6 @@ def delete_load(db: Session, user: User, project_id: UUID, load_id: UUID) -> Non
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Load not found')
     get_project(db, user, project_id)
     db.delete(load)
+    db.flush()
+    refresh_current_snapshot_links(db, project_id)
     db.commit()
