@@ -54,6 +54,7 @@ class ProjectPublic(BaseModel):
     design_settings: dict
     created_at: datetime
     updated_at: datetime
+    access_role: str = 'owner'
 
 
 class ProjectDetail(ProjectPublic):

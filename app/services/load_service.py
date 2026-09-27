@@ -4,23 +4,17 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models.project import Project
 from app.models.project_element import ProjectElement
 from app.models.structural_load import ElementLoad, LoadCase
+from app.models.team import TeamRole
 from app.models.user import User
 from app.schemas.structural_load import ElementLoadCreate, ElementLoadUpdate, LoadCaseCreate
+from app.services.access_service import get_accessible_project
 from app.services.document_service import refresh_current_snapshot_links
 
 
-def get_project(db: Session, user: User, project_id: UUID) -> Project:
-    project = db.scalar(select(Project).where(Project.id == project_id, Project.user_id == user.id))
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Project not found')
-    return project
-
-
-def get_case(db: Session, user: User, project_id: UUID, case_id: UUID) -> LoadCase:
-    get_project(db, user, project_id)
+def get_case(db: Session, user: User, project_id: UUID, case_id: UUID, minimum: TeamRole = TeamRole.VIEWER) -> LoadCase:
+    get_accessible_project(db, user, project_id, minimum)
     load_case = db.scalar(select(LoadCase).where(LoadCase.id == case_id, LoadCase.project_id == project_id))
     if not load_case:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Load case not found')
@@ -28,12 +22,12 @@ def get_case(db: Session, user: User, project_id: UUID, case_id: UUID) -> LoadCa
 
 
 def list_cases(db: Session, user: User, project_id: UUID) -> list[LoadCase]:
-    get_project(db, user, project_id)
+    get_accessible_project(db, user, project_id)
     return list(db.scalars(select(LoadCase).where(LoadCase.project_id == project_id).order_by(LoadCase.created_at)).all())
 
 
 def create_case(db: Session, user: User, project_id: UUID, payload: LoadCaseCreate) -> LoadCase:
-    get_project(db, user, project_id)
+    get_accessible_project(db, user, project_id, TeamRole.EDITOR)
     load_case = LoadCase(project_id=project_id, name=payload.name.strip(), category=payload.category)
     db.add(load_case)
     db.commit()
@@ -42,7 +36,7 @@ def create_case(db: Session, user: User, project_id: UUID, payload: LoadCaseCrea
 
 
 def list_loads(db: Session, user: User, project_id: UUID) -> list[ElementLoad]:
-    get_project(db, user, project_id)
+    get_accessible_project(db, user, project_id)
     return list(db.scalars(select(ElementLoad).join(LoadCase).where(LoadCase.project_id == project_id).order_by(ElementLoad.created_at)).all())
 
 
@@ -52,7 +46,7 @@ def validate_element(db: Session, project_id: UUID, element_id: UUID | None) -> 
 
 
 def create_load(db: Session, user: User, project_id: UUID, payload: ElementLoadCreate) -> ElementLoad:
-    load_case = get_case(db, user, project_id, payload.load_case_id)
+    load_case = get_case(db, user, project_id, payload.load_case_id, TeamRole.EDITOR)
     validate_element(db, load_case.project_id, payload.element_id)
     load = ElementLoad(**payload.model_dump())
     db.add(load)
@@ -64,10 +58,10 @@ def create_load(db: Session, user: User, project_id: UUID, payload: ElementLoadC
 
 
 def update_load(db: Session, user: User, project_id: UUID, load_id: UUID, payload: ElementLoadUpdate) -> ElementLoad:
+    get_accessible_project(db, user, project_id, TeamRole.EDITOR)
     load = db.scalar(select(ElementLoad).join(LoadCase).where(ElementLoad.id == load_id, LoadCase.project_id == project_id))
     if not load:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Load not found')
-    get_project(db, user, project_id)
     values = payload.model_dump(exclude_unset=True)
     validate_element(db, project_id, values.get('element_id', load.element_id))
     for key, value in values.items():
@@ -80,10 +74,10 @@ def update_load(db: Session, user: User, project_id: UUID, load_id: UUID, payloa
 
 
 def delete_load(db: Session, user: User, project_id: UUID, load_id: UUID) -> None:
+    get_accessible_project(db, user, project_id, TeamRole.EDITOR)
     load = db.scalar(select(ElementLoad).join(LoadCase).where(ElementLoad.id == load_id, LoadCase.project_id == project_id))
     if not load:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Load not found')
-    get_project(db, user, project_id)
     db.delete(load)
     db.flush()
     refresh_current_snapshot_links(db, project_id)
