@@ -31,5 +31,7 @@ class Project(Base):
     folder = relationship('Folder', back_populates='projects')
     elements = relationship('ProjectElement', back_populates='project', cascade='all, delete-orphan')
 
-    # Transient (not a column): highest stored document revision, set by services.
+    # Transient (not columns): highest stored document revision and the
+    # requesting user's effective role, both set by services.
     head_revision: int = 0
+    access_role: str = 'owner'

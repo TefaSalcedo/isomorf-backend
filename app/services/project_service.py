@@ -2,31 +2,37 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 from sqlalchemy import select
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app.models.folder import Folder
 from app.models.project import Project
+from app.models.team import ProjectShare, TeamMember, TeamRole
 from app.models.user import User
 from app.schemas.project import ProjectCreate, ProjectUpdate
+from app.services.access_service import get_accessible_project, resolve_project_role
 from app.services.document_service import _head_revision, ensure_baseline
 
 
 def list_projects(db: Session, user: User) -> list[Project]:
-    return list(db.scalars(select(Project).where(Project.user_id == user.id).order_by(Project.updated_at.desc())).all())
+    shared_ids = (
+        select(ProjectShare.project_id)
+        .join(TeamMember, TeamMember.team_id == ProjectShare.team_id)
+        .where(TeamMember.user_id == user.id)
+    )
+    projects = list(
+        db.scalars(
+            select(Project)
+            .where((Project.user_id == user.id) | Project.id.in_(shared_ids))
+            .order_by(Project.updated_at.desc())
+        ).all()
+    )
+    for project in projects:
+        project.access_role = resolve_project_role(db, user, project) or TeamRole.VIEWER
+    return projects
 
 
-def get_project(db: Session, user: User, project_id: str | UUID) -> Project:
-    identifier = str(project_id)
-    project = db.scalar(select(Project).options(selectinload(Project.elements)).where(Project.public_id == identifier, Project.user_id == user.id))
-    if not project:
-        try:
-            internal_id = UUID(identifier)
-        except ValueError:
-            internal_id = None
-        if internal_id:
-            project = db.scalar(select(Project).options(selectinload(Project.elements)).where(Project.id == internal_id, Project.user_id == user.id))
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Project not found')
+def get_project(db: Session, user: User, project_id: str | UUID, minimum: TeamRole = TeamRole.VIEWER) -> Project:
+    project = get_accessible_project(db, user, project_id, minimum)
     project.head_revision = _head_revision(db, project.id)
     return project
 
@@ -48,8 +54,9 @@ def create_project(db: Session, user: User, payload: ProjectCreate) -> Project:
 
 
 def update_project(db: Session, user: User, project_id: UUID, payload: ProjectUpdate) -> Project:
-    project = get_project(db, user, project_id)
     values = payload.model_dump(exclude_unset=True)
+    minimum = TeamRole.OWNER if 'folder_id' in values else TeamRole.EDITOR
+    project = get_project(db, user, project_id, minimum)
     if 'folder_id' in values:
         validate_folder(db, user, values['folder_id'])
     for key, value in values.items():
@@ -60,6 +67,6 @@ def update_project(db: Session, user: User, project_id: UUID, payload: ProjectUp
 
 
 def delete_project(db: Session, user: User, project_id: UUID) -> None:
-    project = get_project(db, user, project_id)
+    project = get_project(db, user, project_id, TeamRole.OWNER)
     db.delete(project)
     db.commit()

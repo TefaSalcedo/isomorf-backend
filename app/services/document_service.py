@@ -19,19 +19,16 @@ from app.models.project import Project
 from app.models.project_document import ElementRevision, ProjectDocument
 from app.models.project_element import ElementType, ProjectElement
 from app.models.structural_load import ElementLoad, LoadCase
+from app.models.team import TeamRole
 from app.models.user import User
 from app.schemas.document import DocumentPayload
+from app.services.access_service import get_accessible_project
 
 ELEMENT_FIELDS = ('x1', 'y1', 'x2', 'y2', 'length', 'rotation', 'properties')
 
 
-def _locked_owned_project(db: Session, user: User, project_id: UUID) -> Project:
-    project = db.scalar(
-        select(Project).where(Project.id == project_id, Project.user_id == user.id).with_for_update()
-    )
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Project not found')
-    return project
+def _locked_editable_project(db: Session, user: User, project_id: UUID) -> Project:
+    return get_accessible_project(db, user, project_id, TeamRole.EDITOR, lock=True)
 
 
 def _serialize_element(element: ProjectElement) -> dict:
@@ -192,7 +189,7 @@ def _document_at(db: Session, project_id: UUID, revision: int) -> ProjectDocumen
 
 
 def save_document(db: Session, user: User, project_id: UUID, payload: DocumentPayload) -> dict:
-    project = _locked_owned_project(db, user, project_id)
+    project = _locked_editable_project(db, user, project_id)
     ensure_baseline(db, project)
     before = {el.id: _serialize_element(el) for el in _list_elements(db, project.id)}
     previous_settings = project.design_settings or {}
@@ -235,7 +232,7 @@ def save_document(db: Session, user: User, project_id: UUID, payload: DocumentPa
 
 
 def undo_document(db: Session, user: User, project_id: UUID) -> dict:
-    project = _locked_owned_project(db, user, project_id)
+    project = _locked_editable_project(db, user, project_id)
     ensure_baseline(db, project)
     if project.current_revision <= 1:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail='Nothing to undo')
@@ -247,7 +244,7 @@ def undo_document(db: Session, user: User, project_id: UUID) -> dict:
 
 
 def redo_document(db: Session, user: User, project_id: UUID) -> dict:
-    project = _locked_owned_project(db, user, project_id)
+    project = _locked_editable_project(db, user, project_id)
     ensure_baseline(db, project)
     head = _head_revision(db, project.id)
     if project.current_revision >= head:
@@ -260,7 +257,7 @@ def redo_document(db: Session, user: User, project_id: UUID) -> dict:
 
 
 def restore_revision(db: Session, user: User, project_id: UUID, revision: int) -> dict:
-    project = _locked_owned_project(db, user, project_id)
+    project = _locked_editable_project(db, user, project_id)
     ensure_baseline(db, project)
     document = _document_at(db, project.id, revision)
     _apply_snapshot(db, project, document.snapshot)
@@ -270,9 +267,7 @@ def restore_revision(db: Session, user: User, project_id: UUID, revision: int) -
 
 
 def get_history(db: Session, user: User, project_id: UUID, limit: int = 100) -> dict:
-    project = db.scalar(select(Project).where(Project.id == project_id, Project.user_id == user.id))
-    if not project:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail='Project not found')
+    project = get_accessible_project(db, user, project_id)
     documents = db.scalars(
         select(ProjectDocument)
         .where(ProjectDocument.project_id == project.id)

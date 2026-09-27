@@ -4,6 +4,7 @@ from app.models.project import Project
 from app.models.project_document import ElementRevision, ProjectDocument
 from app.models.project_element import ProjectElement
 from app.models.structural_load import ElementLoad, LoadCase, LoadType
+from app.models.team import ProjectShare, Team, TeamInvite, TeamMember, TeamRole
 from app.models.user import User
 
-__all__ = ['DeviceNonce', 'DeviceSession', 'ElementLoad', 'ElementRevision', 'Folder', 'LoadCase', 'LoadType', 'Project', 'ProjectDocument', 'ProjectElement', 'User']
+__all__ = ['DeviceNonce', 'DeviceSession', 'ElementLoad', 'ElementRevision', 'Folder', 'LoadCase', 'LoadType', 'Project', 'ProjectDocument', 'ProjectElement', 'ProjectShare', 'Team', 'TeamInvite', 'TeamMember', 'TeamRole', 'User']
