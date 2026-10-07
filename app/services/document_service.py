@@ -24,7 +24,7 @@ from app.models.user import User
 from app.schemas.document import DocumentPayload
 from app.services.access_service import get_accessible_project
 
-ELEMENT_FIELDS = ('x1', 'y1', 'x2', 'y2', 'length', 'rotation', 'properties')
+ELEMENT_FIELDS = ('x1', 'y1', 'x2', 'y2', 'length', 'rotation', 'material_id', 'section_id', 'properties')
 
 
 def _locked_editable_project(db: Session, user: User, project_id: UUID) -> Project:
@@ -41,9 +41,21 @@ def _serialize_element(element: ProjectElement) -> dict:
         'y2': element.y2,
         'length': element.length,
         'rotation': element.rotation,
+        'material_id': str(element.material_id) if element.material_id else None,
+        'section_id': str(element.section_id) if element.section_id else None,
         'properties': element.properties,
         'created_at': element.created_at.isoformat() if element.created_at else None,
     }
+
+
+UUID_FIELDS = frozenset({'material_id', 'section_id'})
+
+
+def _coerce_field(field: str, value):
+    """Snapshots serialize UUIDs as strings; the ORM expects ``UUID`` objects."""
+    if field in UUID_FIELDS and isinstance(value, str):
+        return UUID(value)
+    return value
 
 
 def _list_elements(db: Session, project_id: UUID) -> list[ProjectElement]:
@@ -102,13 +114,13 @@ def _apply_elements(db: Session, project: Project, elements_data: list[dict]) ->
             element = existing[element_id]
             element.element_type = ElementType(data['element_type'])
             for field in ELEMENT_FIELDS:
-                setattr(element, field, data[field])
+                setattr(element, field, _coerce_field(field, data[field]))
         else:
             element = ProjectElement(
                 id=element_id,
                 project_id=project.id,
                 element_type=ElementType(data['element_type']),
-                **{field: data[field] for field in ELEMENT_FIELDS},
+                **{field: _coerce_field(field, data[field]) for field in ELEMENT_FIELDS},
             )
             created_at = data.get('created_at')
             if created_at:
