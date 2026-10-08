@@ -16,6 +16,15 @@ class ElementType(StrEnum):
     WINDOW = 'window'
     COLUMN = 'column'
     BEAM = 'beam'
+    SLAB = 'slab'
+    FOOTING = 'footing'
+    STAIR = 'stair'
+    RAMP = 'ramp'
+    OPENING = 'opening'
+    JOIST = 'joist'
+    GRADE_BEAM = 'grade_beam'
+    BRACE = 'brace'
+    PILE = 'pile'
 
 
 class ProjectElement(Base):
@@ -30,6 +39,8 @@ class ProjectElement(Base):
     y2: Mapped[float] = mapped_column(Float, nullable=False)
     length: Mapped[float] = mapped_column(Float, nullable=False)
     rotation: Mapped[float] = mapped_column(Float, default=0, nullable=False)
+    material_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey('materials.id', ondelete='SET NULL'), index=True)
+    section_id: Mapped[UUID | None] = mapped_column(PGUUID(as_uuid=True), ForeignKey('sections.id', ondelete='SET NULL'), index=True)
     properties: Mapped[dict] = mapped_column(JSONB, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)

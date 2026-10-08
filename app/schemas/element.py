@@ -11,6 +11,15 @@ class ElementType(StrEnum):
     WINDOW = 'window'
     COLUMN = 'column'
     BEAM = 'beam'
+    SLAB = 'slab'
+    FOOTING = 'footing'
+    STAIR = 'stair'
+    RAMP = 'ramp'
+    OPENING = 'opening'
+    JOIST = 'joist'
+    GRADE_BEAM = 'grade_beam'
+    BRACE = 'brace'
+    PILE = 'pile'
 
 
 class ElementPayload(BaseModel):
@@ -22,6 +31,8 @@ class ElementPayload(BaseModel):
     y2: float
     length: float = Field(gt=0)
     rotation: float = 0
+    material_id: UUID | None = None
+    section_id: UUID | None = None
     properties: dict = {}
 
     @model_validator(mode='after')
@@ -39,6 +50,8 @@ class ElementUpdate(BaseModel):
     y2: float | None = None
     length: float | None = Field(default=None, gt=0)
     rotation: float | None = None
+    material_id: UUID | None = None
+    section_id: UUID | None = None
     properties: dict | None = None
 
 
@@ -54,6 +67,8 @@ class ProjectElementPublic(BaseModel):
     y2: float
     length: float
     rotation: float
+    material_id: UUID | None
+    section_id: UUID | None
     properties: dict
     created_at: datetime
     updated_at: datetime
