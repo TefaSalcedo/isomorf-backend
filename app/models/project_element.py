@@ -25,6 +25,13 @@ class ElementType(StrEnum):
     GRADE_BEAM = 'grade_beam'
     BRACE = 'brace'
     PILE = 'pile'
+    LINE = 'line'
+    POLYLINE = 'polyline'
+    ARC = 'arc'
+    CIRCLE = 'circle'
+    ELLIPSE = 'ellipse'
+    RECTANGLE = 'rectangle'
+    HATCH = 'hatch'
 
 
 class ProjectElement(Base):
