@@ -20,6 +20,13 @@ class ElementType(StrEnum):
     GRADE_BEAM = 'grade_beam'
     BRACE = 'brace'
     PILE = 'pile'
+    LINE = 'line'
+    POLYLINE = 'polyline'
+    ARC = 'arc'
+    CIRCLE = 'circle'
+    ELLIPSE = 'ellipse'
+    RECTANGLE = 'rectangle'
+    HATCH = 'hatch'
 
 
 class ElementPayload(BaseModel):
@@ -37,6 +44,9 @@ class ElementPayload(BaseModel):
 
     @model_validator(mode='after')
     def validate_coordinates(self):
+        # Closed polylines legitimately share their first and last vertex.
+        if self.element_type == ElementType.POLYLINE:
+            return self
         if self.x1 == self.x2 and self.y1 == self.y2:
             raise ValueError('Element endpoints must be different')
         return self

@@ -49,6 +49,76 @@ class TestCreate:
         assert response.status_code == 404
 
 
+class TestCadPrimitives:
+    """Roadmap week 8: annotation primitives persist alongside structural types."""
+
+    @pytest.mark.parametrize('element_type', ['line', 'arc', 'circle', 'ellipse', 'rectangle', 'hatch'])
+    def test_creates_primitive(self, registered, project, element_type):
+        payload = {
+            'element_type': element_type,
+            'x1': 0,
+            'y1': 0,
+            'x2': 200,
+            'y2': 150,
+            'length': 250,
+            'rotation': 0,
+            'properties': {},
+        }
+        response = registered.signed_post(f"/api/projects/{project['id']}/elements", json=payload)
+        assert response.status_code == 201, response.text
+        assert response.json()['element_type'] == element_type
+
+    def test_creates_polyline_with_vertices(self, registered, project):
+        payload = {
+            'element_type': 'polyline',
+            'x1': 0,
+            'y1': 0,
+            'x2': 600,
+            'y2': 400,
+            'length': 2000,
+            'rotation': 0,
+            'properties': {'points': [{'x': 0, 'y': 0}, {'x': 600, 'y': 0}, {'x': 600, 'y': 400}, {'x': 0, 'y': 400}]},
+        }
+        response = registered.signed_post(f"/api/projects/{project['id']}/elements", json=payload)
+        assert response.status_code == 201, response.text
+        assert response.json()['properties']['points'][2] == {'x': 600, 'y': 400}
+
+    def test_closed_polyline_allows_equal_endpoints(self, registered, project):
+        payload = {
+            'element_type': 'polyline',
+            'x1': 0,
+            'y1': 0,
+            'x2': 0,
+            'y2': 0,
+            'length': 2000,
+            'rotation': 0,
+            'properties': {'closed': True, 'points': [{'x': 0, 'y': 0}, {'x': 600, 'y': 0}, {'x': 600, 'y': 400}, {'x': 0, 'y': 400}]},
+        }
+        response = registered.signed_post(f"/api/projects/{project['id']}/elements", json=payload)
+        assert response.status_code == 201, response.text
+
+    def test_line_still_rejects_degenerate_geometry(self, registered, project):
+        response = registered.signed_post(
+            f"/api/projects/{project['id']}/elements",
+            json={'element_type': 'line', 'x1': 0, 'y1': 0, 'x2': 0, 'y2': 0, 'length': 1, 'rotation': 0, 'properties': {}},
+        )
+        assert response.status_code == 422
+
+    def test_primitives_roundtrip_through_document(self, registered, project):
+        element = registered.signed_post(
+            f"/api/projects/{project['id']}/elements",
+            json={'element_type': 'circle', 'x1': 100, 'y1': 100, 'x2': 150, 'y2': 100, 'length': 314.16, 'rotation': 0, 'properties': {'radius': 50}},
+        ).json()
+        response = registered.signed_put(
+            f"/api/projects/{project['id']}/document",
+            json={'elements': [element]},
+        )
+        assert response.status_code == 200, response.text
+        saved = [el for el in response.json()['elements'] if el['id'] == element['id']]
+        assert saved and saved[0]['element_type'] == 'circle'
+        assert saved[0]['properties']['radius'] == 50
+
+
 class TestList:
     def test_lists_elements(self, registered, project):
         registered.signed_post(f"/api/projects/{project['id']}/elements", json=WALL)
