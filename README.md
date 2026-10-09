@@ -6,7 +6,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12+-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.1+-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15+-4169E1?logo=postgresql&logoColor=white)](https://www.postgresql.org)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-All%20rights%20reserved-red.svg)](https://choosealicense.com/no-permission/)
 
 REST API that serves the [isomorf-frontend](https://github.com/TefaSalcedo/isomorf-frontend) Next.js app.
 
@@ -110,4 +110,4 @@ The image entrypoint runs `alembic upgrade head` before starting uvicorn.
 
 ## License
 
-[Apache 2.0](LICENSE)
+All rights reserved. This repository is public for portfolio and review purposes — reuse, redistribution or commercial use of the code requires written permission from the author.
