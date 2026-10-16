@@ -32,6 +32,7 @@ class ElementType(StrEnum):
     ELLIPSE = 'ellipse'
     RECTANGLE = 'rectangle'
     HATCH = 'hatch'
+    BLOCK_REF = 'block_ref'
 
 
 class ProjectElement(Base):

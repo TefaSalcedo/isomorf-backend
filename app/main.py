@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api import auth, catalog, documents, elements, folders, loads, projects, teams
+from app.api import auth, blocks, catalog, documents, elements, folders, loads, projects, teams
 from app.core.config import settings
 
 app = FastAPI(title='ISOMORF API', version='0.1.0')
@@ -16,6 +16,7 @@ app.include_router(teams.router)
 app.include_router(catalog.presets_router)
 app.include_router(catalog.materials_router)
 app.include_router(catalog.sections_router)
+app.include_router(blocks.router)
 
 
 @app.get('/health', tags=['health'])

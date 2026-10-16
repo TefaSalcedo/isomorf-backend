@@ -24,6 +24,8 @@ class PlanLayer(BaseModel):
     color: str = Field(pattern=r'^#[0-9a-fA-F]{6}$')
     visible: bool = True
     locked: bool = False
+    linetype: str | None = Field(default=None, max_length=20)
+    lineweight: float | None = Field(default=None, ge=0.05, le=2.0)
 
 
 class DesignSettings(BaseModel):
