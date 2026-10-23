@@ -27,6 +27,7 @@ class ElementType(StrEnum):
     ELLIPSE = 'ellipse'
     RECTANGLE = 'rectangle'
     HATCH = 'hatch'
+    BLOCK_REF = 'block_ref'
 
 
 class ElementPayload(BaseModel):
@@ -44,8 +45,10 @@ class ElementPayload(BaseModel):
 
     @model_validator(mode='after')
     def validate_coordinates(self):
-        # Closed polylines legitimately share their first and last vertex.
-        if self.element_type == ElementType.POLYLINE:
+        # Closed polylines legitimately share their first and last vertex;
+        # a block_ref whose contents collapse to its insertion point is a
+        # valid point-only reference.
+        if self.element_type in (ElementType.POLYLINE, ElementType.BLOCK_REF):
             return self
         if self.x1 == self.x2 and self.y1 == self.y2:
             raise ValueError('Element endpoints must be different')
