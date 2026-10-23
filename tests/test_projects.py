@@ -84,6 +84,61 @@ class TestUpdate:
         assert data['name'] == 'Renamed'
         assert data['design_settings']['layers'][0]['name'] == 'Walls'
 
+    def test_roundtrips_annotation_settings(self, registered):
+        project = _create_project(registered).json()
+        dim_style = {
+            'id': 'iso-25',
+            'name': 'ISO-25',
+            'text_height': 2.5,
+            'arrow': 'arrow',
+            'arrow_size': 2.5,
+            'ext_offset': 1.25,
+            'ext_extend': 1.25,
+            'decimals': 2,
+            'unit': 'm',
+            'angle_decimals': 0,
+        }
+        response = registered.signed_put(
+            f"/api/projects/{project['id']}",
+            json={
+                'design_settings': {
+                    'annotation_scale': 50,
+                    'dim_styles': [dim_style],
+                    'active_dim_style_id': 'iso-25',
+                }
+            },
+        )
+        assert response.status_code == 200, response.text
+        settings = response.json()['design_settings']
+        assert settings['annotation_scale'] == 50
+        assert settings['dim_styles'] == [dim_style]
+        assert settings['active_dim_style_id'] == 'iso-25'
+
+    def test_rejects_invalid_dim_style_arrow(self, registered):
+        project = _create_project(registered).json()
+        response = registered.signed_put(
+            f"/api/projects/{project['id']}",
+            json={
+                'design_settings': {
+                    'dim_styles': [
+                        {
+                            'id': 'invalid',
+                            'name': 'Invalid',
+                            'text_height': 2.5,
+                            'arrow': 'foo',
+                            'arrow_size': 2.5,
+                            'ext_offset': 1.25,
+                            'ext_extend': 1.25,
+                            'decimals': 2,
+                            'unit': 'm',
+                            'angle_decimals': 0,
+                        }
+                    ]
+                }
+            },
+        )
+        assert response.status_code == 422
+
     def test_update_other_users_project_returns_404(self, make_client):
         owner = _register(make_client())
         intruder = _register(make_client())

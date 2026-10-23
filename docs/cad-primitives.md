@@ -117,3 +117,15 @@ section_id, properties).
 
 Elements may override them per element via `properties.linetype` /
 `properties.lineweight` (absent = ByLayer).
+
+## Annotation elements (week 11)
+
+Week 11 adds `dimension`, `leader`, `text`, and `table` to the existing
+element/document endpoints. Their geometry remains in plan centimeters;
+annotation paper sizes are stored in millimeters and scaled by
+`design_settings.annotation_scale`. Dimensions store their measurement
+points in `x1,y1`/`x2,y2` and placement in `properties.dim_point`; leaders
+store the arrow tip and landing in those endpoints; text stores its
+insertion point; tables store their rectangle. `design_settings.dim_styles`
+contains validated dimension styles, and `active_dim_style_id` selects the
+default style.

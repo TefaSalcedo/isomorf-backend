@@ -33,6 +33,10 @@ class ElementType(StrEnum):
     RECTANGLE = 'rectangle'
     HATCH = 'hatch'
     BLOCK_REF = 'block_ref'
+    DIMENSION = 'dimension'
+    LEADER = 'leader'
+    TEXT = 'text'
+    TABLE = 'table'
 
 
 class ProjectElement(Base):
