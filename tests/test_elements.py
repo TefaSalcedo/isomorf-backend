@@ -119,6 +119,69 @@ class TestCadPrimitives:
         assert saved[0]['properties']['radius'] == 50
 
 
+class TestAnnotations:
+    """Roadmap week 11: annotation types persist through the document API."""
+
+    def test_point_text_allows_equal_endpoints_on_create_and_document_save(self, registered, project):
+        payload = {
+            'element_type': 'text',
+            'x1': 100,
+            'y1': 100,
+            'x2': 100,
+            'y2': 100,
+            'length': 2.5,
+            'rotation': 0,
+            'properties': {'text': 'Point label', 'height': 2.5},
+        }
+        response = registered.signed_post(f"/api/projects/{project['id']}/elements", json=payload)
+        assert response.status_code == 201, response.text
+        element = response.json()
+
+        document = registered.signed_put(f"/api/projects/{project['id']}/document", json={'elements': [element]})
+        assert document.status_code == 200, document.text
+        saved = [item for item in document.json()['elements'] if item['id'] == element['id']]
+        assert saved and saved[0]['x1'] == saved[0]['x2'] and saved[0]['y1'] == saved[0]['y2']
+        assert saved[0]['length'] == 2.5
+
+    @pytest.mark.parametrize(
+        ('element_type', 'properties'),
+        [
+            (
+                'dimension',
+                {
+                    'kind': 'linear',
+                    'dim_point': {'x': 250, 'y': 150},
+                    'orientation': 'horizontal',
+                    'dim_style_id': 'iso-25',
+                },
+            ),
+            ('leader', {'text': 'Grid A', 'dim_style_id': 'iso-25'}),
+            ('text', {'text': 'Planta 1:50', 'height': 2.5, 'bold': True}),
+            ('table', {'rows': 2, 'cols': 2, 'cells': [['A', 'B'], ['C', 'D']], 'header': True, 'text_height': 2.5}),
+        ],
+    )
+    def test_creates_and_roundtrips_annotation(self, registered, project, element_type, properties):
+        payload = {
+            'element_type': element_type,
+            'x1': 100,
+            'y1': 100,
+            'x2': 101 if element_type == 'text' else 300,
+            'y2': 200 if element_type == 'table' else 100,
+            'length': 1 if element_type == 'text' else 200,
+            'rotation': 0,
+            'properties': properties,
+        }
+        response = registered.signed_post(f"/api/projects/{project['id']}/elements", json=payload)
+        assert response.status_code == 201, response.text
+        element = response.json()
+
+        document = registered.signed_put(f"/api/projects/{project['id']}/document", json={'elements': [element]})
+        assert document.status_code == 200, document.text
+        saved = [item for item in document.json()['elements'] if item['id'] == element['id']]
+        assert saved and saved[0]['element_type'] == element_type
+        assert saved[0]['properties'] == properties
+
+
 class TestList:
     def test_lists_elements(self, registered, project):
         registered.signed_post(f"/api/projects/{project['id']}/elements", json=WALL)
