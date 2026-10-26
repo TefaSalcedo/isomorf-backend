@@ -122,6 +122,27 @@ class TestCadPrimitives:
 class TestAnnotations:
     """Roadmap week 11: annotation types persist through the document API."""
 
+    def test_point_text_allows_equal_endpoints_on_create_and_document_save(self, registered, project):
+        payload = {
+            'element_type': 'text',
+            'x1': 100,
+            'y1': 100,
+            'x2': 100,
+            'y2': 100,
+            'length': 2.5,
+            'rotation': 0,
+            'properties': {'text': 'Point label', 'height': 2.5},
+        }
+        response = registered.signed_post(f"/api/projects/{project['id']}/elements", json=payload)
+        assert response.status_code == 201, response.text
+        element = response.json()
+
+        document = registered.signed_put(f"/api/projects/{project['id']}/document", json={'elements': [element]})
+        assert document.status_code == 200, document.text
+        saved = [item for item in document.json()['elements'] if item['id'] == element['id']]
+        assert saved and saved[0]['x1'] == saved[0]['x2'] and saved[0]['y1'] == saved[0]['y2']
+        assert saved[0]['length'] == 2.5
+
     @pytest.mark.parametrize(
         ('element_type', 'properties'),
         [

@@ -9,6 +9,20 @@ def _create_project(registered, **overrides):
     payload = {'name': 'Frame model', 'description': 'Two-storey frame', **overrides}
     return registered.signed_post('/api/projects', json=payload)
 
+def _dim_style(style_id='iso-25'):
+    return {
+        'id': style_id,
+        'name': 'ISO-25',
+        'text_height': 2.5,
+        'arrow': 'arrow',
+        'arrow_size': 2.5,
+        'ext_offset': 1.25,
+        'ext_extend': 1.25,
+        'decimals': 2,
+        'unit': 'm',
+        'angle_decimals': 0,
+    }
+
 
 class TestCreate:
     def test_creates_project_with_public_id(self, registered):
@@ -113,6 +127,38 @@ class TestUpdate:
         assert settings['annotation_scale'] == 50
         assert settings['dim_styles'] == [dim_style]
         assert settings['active_dim_style_id'] == 'iso-25'
+
+    def test_rejects_duplicate_dim_style_ids(self, registered):
+        project = _create_project(registered).json()
+        style = _dim_style()
+        response = registered.signed_put(
+            f"/api/projects/{project['id']}",
+            json={'design_settings': {'dim_styles': [style, {**style, 'name': 'Duplicate'}]}},
+        )
+        assert response.status_code == 422
+
+    def test_rejects_active_dim_style_not_in_styles(self, registered):
+        project = _create_project(registered).json()
+        response = registered.signed_put(
+            f"/api/projects/{project['id']}",
+            json={
+                'design_settings': {
+                    'dim_styles': [_dim_style()],
+                    'active_dim_style_id': 'missing',
+                }
+            },
+        )
+        assert response.status_code == 422
+
+    def test_accepts_active_dim_style_when_styles_are_none(self, registered):
+        project = _create_project(registered).json()
+        response = registered.signed_put(
+            f"/api/projects/{project['id']}",
+            json={'design_settings': {'dim_styles': None, 'active_dim_style_id': 'arq'}},
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()['design_settings']['active_dim_style_id'] == 'arq'
+        assert response.json()['design_settings']['dim_styles'] is None
 
     def test_rejects_invalid_dim_style_arrow(self, registered):
         project = _create_project(registered).json()

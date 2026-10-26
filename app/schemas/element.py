@@ -52,7 +52,7 @@ class ElementPayload(BaseModel):
         # Closed polylines legitimately share their first and last vertex;
         # a block_ref whose contents collapse to its insertion point is a
         # valid point-only reference.
-        if self.element_type in (ElementType.POLYLINE, ElementType.BLOCK_REF):
+        if self.element_type in (ElementType.POLYLINE, ElementType.BLOCK_REF, ElementType.TEXT):
             return self
         if self.x1 == self.x2 and self.y1 == self.y2:
             raise ValueError('Element endpoints must be different')
